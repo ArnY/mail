@@ -74,6 +74,14 @@ export default {
 			type: Object,
 			required: true,
 		},
+		paginate: {
+			type: Boolean,
+			default: true,
+		},
+		openFirst: {
+			type: Boolean,
+			default: true,
+		},
 		searchQuery: {
 			type: String,
 			required: false,
@@ -109,6 +117,8 @@ export default {
 		this.bus.$on('loadMore', this.loadMore)
 		this.bus.$on('delete', this.onDelete)
 		this.bus.$on('shortcut', this.handleShortcut)
+
+		window.addEventListener('focus', this.onWindowFocus)
 	},
 	async mounted() {
 		return await this.loadEnvelopes()
@@ -117,6 +127,8 @@ export default {
 		this.bus.$off('loadMore', this.loadMore)
 		this.bus.$off('delete', this.onDelete)
 		this.bus.$off('shortcut', this.handleShortcut)
+
+		window.removeEventListener('focus', this.onWindowFocus)
 	},
 	methods: {
 		initializeCache() {
@@ -147,13 +159,14 @@ export default {
 					accountId: this.account.id,
 					folderId: this.folder.id,
 					query: this.searchQuery,
+					paginate: this.paginate,
 				})
 
 				logger.debug('envelopes fetched', {envelopes})
 
 				this.loadingEnvelopes = false
 
-				if (!this.isMobile && this.$route.name !== 'message' && envelopes.length > 0) {
+				if (this.openFirst && !this.isMobile && this.$route.name !== 'message' && envelopes.length > 0) {
 					// Show first message
 					let first = envelopes[0]
 
@@ -162,8 +175,8 @@ export default {
 					this.$router.replace({
 						name: 'message',
 						params: {
-							accountId: this.account.id,
-							folderId: this.folder.id,
+							accountId: this.$route.params.accountId,
+							folderId: this.$route.params.folderId,
 							filter: this.$route.params.filter ? this.$route.params.filter : undefined,
 							messageUid: first.uid,
 						},
@@ -203,8 +216,8 @@ export default {
 
 			try {
 				await this.$store.dispatch('fetchNextEnvelopePage', {
-					accountId: this.$route.params.accountId,
-					folderId: this.$route.params.folderId,
+					accountId: this.account.accountId,
+					folderId: this.folder.id,
 					envelopes: this.envelopes,
 					query: this.searchQuery,
 				})
@@ -296,13 +309,18 @@ export default {
 					logger.warn('shortcut ' + e.srcKey + ' is unknown. ignoring.')
 			}
 		},
+		async onWindowFocus() {
+			if (!this.refreshing) {
+				await this.sync()
+			}
+		},
 		async sync() {
 			this.refreshing = true
 
 			try {
 				await this.$store.dispatch('syncEnvelopes', {
-					accountId: this.$route.params.accountId,
-					folderId: this.$route.params.folderId,
+					accountId: this.account.accountId,
+					folderId: this.folder.id,
 					query: this.searchQuery,
 				})
 			} catch (error) {
