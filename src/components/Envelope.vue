@@ -1,5 +1,9 @@
 <template>
-	<router-link class="app-content-list-item" :class="{unseen: data.flags.unseen, draft}" :to="link">
+	<router-link
+		class="app-content-list-item"
+		:class="{unseen: data.flags.unseen, draft, important: data.flags.important}"
+		:to="link"
+	>
 		<div
 			v-if="folder.isUnified"
 			class="mail-message-account-color"
@@ -31,6 +35,9 @@
 		<Actions class="app-content-list-item-menu" menu-align="right">
 			<ActionButton icon="icon-starred" @click.prevent="onToggleFlagged">{{
 				data.flags.flagged ? t('mail', 'Unfavorite') : t('mail', 'Favorite')
+			}}</ActionButton>
+			<ActionButton icon="icon-mail" @click.prevent="onToggleImportant">{{
+				data.flags.important ? t('mail', 'Mark important') : t('mail', 'Mark unimportant')
 			}}</ActionButton>
 			<ActionButton icon="icon-mail" @click.prevent="onToggleSeen">{{
 				data.flags.unseen ? t('mail', 'Mark read') : t('mail', 'Mark unread')
@@ -134,6 +141,9 @@ export default {
 		onToggleFlagged() {
 			this.$store.dispatch('toggleEnvelopeFlagged', this.data)
 		},
+		onToggleImportant() {
+			this.$store.dispatch('toggleEnvelopeImportant', this.data)
+		},
 		onToggleSeen() {
 			this.$store.dispatch('toggleEnvelopeSeen', this.data)
 		},
@@ -163,6 +173,9 @@ export default {
 }
 .app-content-list-item.draft .app-content-list-item-line-two {
 	font-style: italic;
+}
+.app-content-list-item.important {
+	background-color: red; // TODO
 }
 
 .icon-reply,

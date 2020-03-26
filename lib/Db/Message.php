@@ -58,6 +58,8 @@ use OCP\AppFramework\Db\Entity;
  * @method bool getStructureAnalyzed()
  * @method void setFlagAttachments(?bool $hasAttachments)
  * @method null|bool getFlagAttachments()
+ * @method void setFlagImportant(bool $important)
+ * @method bool getFlagImportant()
  * @method void setPreviewText(?string $subject)
  * @method null|string getPreviewText()
  * @method void setUpdatedAt(int $time)
@@ -81,6 +83,7 @@ class Message extends Entity implements JsonSerializable {
 	protected $updatedAt;
 	protected $structureAnalyzed;
 	protected $flagAttachments;
+	protected $flagImportant;
 	protected $previewText;
 
 	/** @var AddressList */
@@ -113,6 +116,7 @@ class Message extends Entity implements JsonSerializable {
 		$this->addType('flagNotjunk', 'bool');
 		$this->addType('structureAnalyzed', 'bool');
 		$this->addType('flagAttachments', 'bool');
+		$this->addType('flagImportant', 'bool');
 		$this->addType('updatedAt', 'integer');
 	}
 
@@ -185,6 +189,7 @@ class Message extends Entity implements JsonSerializable {
 				'draft' => $this->getFlagDraft(),
 				'forwarded' => $this->getFlagForwarded(),
 				'hasAttachments' => $this->getFlagAttachments() ?? false,
+				'important' => $this->getFlagImportant(),
 			],
 			'from' => $this->getFrom()->jsonSerialize(),
 			'to' => $this->getTo()->jsonSerialize(),
