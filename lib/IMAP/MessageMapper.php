@@ -27,7 +27,6 @@ use Horde_Imap_Client;
 use Horde_Imap_Client_Base;
 use Horde_Imap_Client_Data_Fetch;
 use Horde_Imap_Client_Exception;
-use Horde_Imap_Client_Exception_NoSupportExtension;
 use Horde_Imap_Client_Fetch_Query;
 use Horde_Imap_Client_Ids;
 use Horde_Imap_Client_Socket;
@@ -256,6 +255,22 @@ class MessageMapper {
 			[
 				'ids' => new Horde_Imap_Client_Ids($uid),
 				'add' => [$flag],
+			]
+		);
+	}
+
+	/**
+	 * @throws Horde_Imap_Client_Exception
+	 */
+	public function removeFlag(Horde_Imap_Client_Socket $client,
+							Mailbox $mailbox,
+							int $uid,
+							string $flag): void {
+		$client->store(
+			$mailbox->getName(),
+			[
+				'ids' => new Horde_Imap_Client_Ids($uid),
+				'remove' => [$flag],
 			]
 		);
 	}

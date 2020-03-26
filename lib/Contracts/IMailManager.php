@@ -28,8 +28,6 @@ use OCA\Mail\Exception\ClientException;
 use OCA\Mail\Exception\ServiceException;
 use OCA\Mail\Folder;
 use OCA\Mail\IMAP\FolderStats;
-use OCA\Mail\IMAP\Sync\Request as SyncRequest;
-use OCA\Mail\IMAP\Sync\Response as SyncResponse;
 use OCA\Mail\Model\IMAPMessage;
 
 interface IMailManager {
@@ -116,5 +114,17 @@ interface IMailManager {
 	 * @throws ServiceException
 	 */
 	public function markFolderAsRead(Account $account, string $folderId): void;
+
+	/**
+	 * @param Account $account
+	 * @param string $mailbox
+	 * @param int $uid
+	 * @param string $flag
+	 * @param bool $value
+	 *
+	 * @throws ClientException
+	 * @throws ServiceException
+	 */
+	public function flagMessage(Account $account, string $mailbox, int $uid, string $flag, bool $value): void;
 
 }
