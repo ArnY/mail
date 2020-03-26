@@ -77,6 +77,7 @@ class Message extends Entity implements JsonSerializable {
 		'forwarded',
 		'junk',
 		'notjunk',
+		'important',
 	];
 
 	protected $uid;

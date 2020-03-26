@@ -36,8 +36,8 @@
 			<ActionButton icon="icon-starred" @click.prevent="onToggleFlagged">{{
 				data.flags.flagged ? t('mail', 'Unfavorite') : t('mail', 'Favorite')
 			}}</ActionButton>
-			<ActionButton icon="icon-mail" @click.prevent="onToggleImportant">{{
-				data.flags.important ? t('mail', 'Mark important') : t('mail', 'Mark unimportant')
+			<ActionButton icon="icon-info" @click.prevent="onToggleImportant">{{
+				data.flags.important ? t('mail', 'Mark unimportant') : t('mail', 'Mark important')
 			}}</ActionButton>
 			<ActionButton icon="icon-mail" @click.prevent="onToggleSeen">{{
 				data.flags.unseen ? t('mail', 'Mark read') : t('mail', 'Mark unread')
