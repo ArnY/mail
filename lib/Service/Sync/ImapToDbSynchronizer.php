@@ -29,6 +29,7 @@ use OCA\Mail\Account;
 use OCA\Mail\Db\Mailbox;
 use OCA\Mail\Db\MailboxMapper;
 use OCA\Mail\Db\MessageMapper as DatabaseMessageMapper;
+use OCA\Mail\Events\NewMessagesSynchronized;
 use OCA\Mail\Exception\ClientException;
 use OCA\Mail\Exception\IncompleteSyncException;
 use OCA\Mail\Exception\MailboxNotCachedException;
@@ -40,6 +41,7 @@ use OCA\Mail\IMAP\Sync\Synchronizer;
 use OCA\mail\lib\Exception\UidValidityChangedException;
 use OCA\Mail\Model\IMAPMessage;
 use OCA\Mail\Support\PerformanceLogger;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\ILogger;
 use Throwable;
 use function array_chunk;
@@ -68,6 +70,9 @@ class ImapToDbSynchronizer {
 	/** @var Synchronizer */
 	private $synchronizer;
 
+	/** @var IEventDispatcher */
+	private $dispatcher;
+
 	/** @var PerformanceLogger */
 	private $performanceLogger;
 
@@ -80,6 +85,7 @@ class ImapToDbSynchronizer {
 								MailboxMapper $mailboxMapper,
 								DatabaseMessageMapper $messageMapper,
 								Synchronizer $synchronizer,
+								IEventDispatcher $dispatcher,
 								PerformanceLogger $performanceLogger,
 								ILogger $logger) {
 		$this->dbMapper = $dbMapper;
@@ -88,6 +94,7 @@ class ImapToDbSynchronizer {
 		$this->mailboxMapper = $mailboxMapper;
 		$this->messageMapper = $messageMapper;
 		$this->synchronizer = $synchronizer;
+		$this->dispatcher = $dispatcher;
 		$this->performanceLogger = $performanceLogger;
 		$this->logger = $logger;
 	}
@@ -211,6 +218,7 @@ class ImapToDbSynchronizer {
 
 		$client = $this->clientFactory->getClient($account);
 		$uids = $knownUids ?? $this->dbMapper->findAllUids($mailbox);
+		$newMessages = [];
 		$perf->step('get all known UIDs');
 
 		if ($criteria & Horde_Imap_Client::SYNC_NEWMSGSUIDS) {
@@ -231,6 +239,7 @@ class ImapToDbSynchronizer {
 			}
 			$perf->step('get new messages via Horde');
 
+			$newMessages = $response->getNewMessages();
 			foreach (array_chunk($response->getNewMessages(), 500) as $chunk) {
 				$this->dbMapper->insertBulk(...array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
 					return $imapMessage->toDbMessage($mailbox->getId());
@@ -300,6 +309,15 @@ class ImapToDbSynchronizer {
 		}
 		$this->mailboxMapper->update($mailbox);
 		$perf->end();
+
+		if (!empty($newMessages)) {
+			$this->dispatcher->dispatch(
+				NewMessagesSynchronized::class,
+				new NewMessagesSynchronized($account, $mailbox, array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
+					return $imapMessage->toDbMessage($mailbox->getId());
+				}, $chunk))
+			);
+		}
 	}
 
 }
