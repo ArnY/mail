@@ -1,7 +1,7 @@
 <template>
 	<router-link
 		class="app-content-list-item"
-		:class="{unseen: data.flags.unseen, draft, important: data.flags.important}"
+		:class="{unseen: data.flags.unseen, draft}"
 		:to="link"
 	>
 		<div
@@ -14,6 +14,12 @@
 			class="app-content-list-item-star icon-starred"
 			:data-starred="data.flags.flagged ? 'true' : 'false'"
 			@click.prevent="onToggleFlagged"
+		></div>
+		<div
+			v-if="data.flags.important"
+			class="app-content-list-item-star icon-important"
+			:data-starred="data.flags.flagged ? 'true' : 'false'"
+			@click.prevent="onToggleImportant"
 		></div>
 		<div class="app-content-list-item-icon">
 			<Avatar :display-name="addresses" :email="avatarEmail" />
@@ -168,14 +174,14 @@ export default {
 	z-index: 1;
 }
 
+.app-content-list-item-star.icon-important {
+	left: 5px;
+}
 .app-content-list-item.unseen {
 	font-weight: bold;
 }
 .app-content-list-item.draft .app-content-list-item-line-two {
 	font-style: italic;
-}
-.app-content-list-item.important {
-	background-color: red; // TODO
 }
 
 .icon-reply,
