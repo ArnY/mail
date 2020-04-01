@@ -25,7 +25,6 @@ declare(strict_types=1);
 
 namespace OCA\Mail\Listener;
 
-use OCA\Mail\Db\MessageMapper;
 use OCA\Mail\Events\NewMessagesSynchronized;
 use OCA\Mail\Service\Classification\MessageClassifier;
 use OCP\EventDispatcher\Event;
@@ -36,13 +35,8 @@ class NewMessageClassificationListener implements IEventListener {
 	/** @var MessageClassifier */
 	private $classifier;
 
-	/** @var MessageMapper */
-	private $mapper;
-
-	public function __construct(MessageClassifier $classifier,
-								MessageMapper $mapper) {
+	public function __construct(MessageClassifier $classifier) {
 		$this->classifier = $classifier;
-		$this->mapper = $mapper;
 	}
 
 	public function handle(Event $event): void {
@@ -53,7 +47,6 @@ class NewMessageClassificationListener implements IEventListener {
 		foreach ($event->getMessages() as $message) {
 			if ($this->classifier->isImportant($event->getAccount(), $event->getMailbox(), $message)) {
 				$message->setFlagImportant(true);
-				$this->mapper->update($message);
 			}
 		}
 	}

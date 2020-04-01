@@ -27,13 +27,67 @@ namespace OCA\Mail\Service\Classification;
 
 use OCA\Mail\Account;
 use OCA\Mail\Db\Mailbox;
+use OCA\Mail\Db\MailboxMapper;
 use OCA\Mail\Db\Message;
-use OCA\Mail\Service\Classification\AClassifier;
+use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\IDBConnection;
 
 class OftenContactedSenderClassifier extends AClassifier {
 
+	/** @var MailboxMapper */
+	private $mailboxMapper;
+
+	/** @var IDBConnection */
+	private $db;
+
+	public function __construct(MailboxMapper $mailboxMapper,
+								IDBConnection $db) {
+		$this->mailboxMapper = $mailboxMapper;
+		$this->db = $db;
+	}
+
 	public function isImportant(Account $account, Mailbox $mailbox, Message $message): bool {
-		return false;
+		$sender = $message->getTo()->first();
+		if ($sender === null) {
+			return false;
+		}
+
+		try {
+			$mb = $this->mailboxMapper->findSpecial($account, 'sent');
+		} catch (DoesNotExistException $e) {
+			return false;
+		}
+
+		return $this->getMessagesSentTo($mb, $sender->getEmail()) / $this->getMessagesSentTotal($mb) > 0.1;
+	}
+
+	private function getMessagesSentTotal(Mailbox $mb): int {
+		$qb = $this->db->getQueryBuilder();
+
+		$select = $qb->select($qb->func()->count('*'))
+			->from('mail_recipients', 'r')
+			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
+			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId())));
+		$result = $select->execute();
+		$cnt = $result->fetchColumn();
+		$result->closeCursor();
+		return (int)$cnt;
+	}
+
+	private function getMessagesSentTo(Mailbox $mb, string $email): int {
+		$qb = $this->db->getQueryBuilder();
+
+		$select = $qb->select($qb->func()->count('*'))
+			->from('mail_recipients', 'r')
+			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
+			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+			->where($qb->expr()->eq('r.email', $qb->createNamedParameter($email)))
+			->andWhere($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId())));
+		$result = $select->execute();
+		$cnt = $result->fetchColumn();
+		$result->closeCursor();
+		return (int)$cnt;
 	}
 
 }

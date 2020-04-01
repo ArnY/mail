@@ -28,7 +28,6 @@ namespace OCA\Mail\Service\Classification;
 use OCA\Mail\Account;
 use OCA\Mail\Db\Mailbox;
 use OCA\Mail\Db\Message;
-use OCA\Mail\Service\Classification\AClassifier;
 
 class FlagClassifier extends AClassifier {
 

@@ -218,7 +218,6 @@ class ImapToDbSynchronizer {
 
 		$client = $this->clientFactory->getClient($account);
 		$uids = $knownUids ?? $this->dbMapper->findAllUids($mailbox);
-		$newMessages = [];
 		$perf->step('get all known UIDs');
 
 		if ($criteria & Horde_Imap_Client::SYNC_NEWMSGSUIDS) {
@@ -239,11 +238,18 @@ class ImapToDbSynchronizer {
 			}
 			$perf->step('get new messages via Horde');
 
-			$newMessages = $response->getNewMessages();
+			$perf->step('classified new messages');
 			foreach (array_chunk($response->getNewMessages(), 500) as $chunk) {
-				$this->dbMapper->insertBulk(...array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
+				$dbMessages = array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
 					return $imapMessage->toDbMessage($mailbox->getId());
-				}, $chunk));
+				}, $chunk);
+
+				$this->dispatcher->dispatch(
+					NewMessagesSynchronized::class,
+					new NewMessagesSynchronized($account, $mailbox, $dbMessages)
+				);
+
+				$this->dbMapper->insertBulk(...$dbMessages);
 			}
 			$perf->step('persist new messages');
 
@@ -309,15 +315,6 @@ class ImapToDbSynchronizer {
 		}
 		$this->mailboxMapper->update($mailbox);
 		$perf->end();
-
-		if (!empty($newMessages)) {
-			$this->dispatcher->dispatch(
-				NewMessagesSynchronized::class,
-				new NewMessagesSynchronized($account, $mailbox, array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
-					return $imapMessage->toDbMessage($mailbox->getId());
-				}, $chunk))
-			);
-		}
 	}
 
 }
