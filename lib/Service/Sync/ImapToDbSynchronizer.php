@@ -238,7 +238,6 @@ class ImapToDbSynchronizer {
 			}
 			$perf->step('get new messages via Horde');
 
-			$perf->step('classified new messages');
 			foreach (array_chunk($response->getNewMessages(), 500) as $chunk) {
 				$dbMessages = array_map(function (IMAPMessage $imapMessage) use ($mailbox) {
 					return $imapMessage->toDbMessage($mailbox->getId());
@@ -248,6 +247,7 @@ class ImapToDbSynchronizer {
 					NewMessagesSynchronized::class,
 					new NewMessagesSynchronized($account, $mailbox, $dbMessages)
 				);
+				$perf->step('classified a chunk of new messages');
 
 				$this->dbMapper->insertBulk(...$dbMessages);
 			}

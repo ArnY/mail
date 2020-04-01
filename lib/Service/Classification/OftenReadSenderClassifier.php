@@ -27,12 +27,70 @@ namespace OCA\Mail\Service\Classification;
 
 use OCA\Mail\Account;
 use OCA\Mail\Db\Mailbox;
+use OCA\Mail\Db\MailboxMapper;
 use OCA\Mail\Db\Message;
+use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\IDBConnection;
 
 class OftenReadSenderClassifier extends AClassifier {
 
+	/** @var MailboxMapper */
+	private $mailboxMapper;
+
+	/** @var IDBConnection */
+	private $db;
+
+	public function __construct(MailboxMapper $mailboxMapper,
+								IDBConnection $db) {
+		$this->mailboxMapper = $mailboxMapper;
+		$this->db = $db;
+	}
+
 	public function isImportant(Account $account, Mailbox $mailbox, Message $message): bool {
-		return false;
+		$sender = $message->getTo()->first();
+		if ($sender === null) {
+			return false;
+		}
+
+		try {
+			$mb = $this->mailboxMapper->findSpecial($account, 'inbox');
+		} catch (DoesNotExistException $e) {
+			return false;
+		}
+
+		return ($this->getNrOfReadMessages($mb, $sender->getEmail()) / $this->getNumberOfMessages($mb, $sender->getEmail())) > 0.9;
+	}
+
+	private function getNrOfReadMessages(Mailbox $mb, string $email): int {
+		$qb = $this->db->getQueryBuilder();
+
+		$select = $qb->select($qb->func()->count('*'))
+			->from('mail_recipients', 'r')
+			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
+			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('m.flag_seen', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->eq('r.email', $qb->createNamedParameter($email)));
+		$result = $select->execute();
+		$cnt = $result->fetchColumn();
+		$result->closeCursor();
+		return (int)$cnt;
+	}
+
+	private function getNumberOfMessages(Mailbox $mb, string $email): int {
+		$qb = $this->db->getQueryBuilder();
+
+		$select = $qb->select($qb->func()->count('*'))
+			->from('mail_recipients', 'r')
+			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
+			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('r.email', $qb->createNamedParameter($email)));
+		$result = $select->execute();
+		$cnt = $result->fetchColumn();
+		$result->closeCursor();
+		return (int)$cnt;
 	}
 
 }

@@ -30,6 +30,7 @@ use OCA\Mail\Db\Mailbox;
 use OCA\Mail\Db\MailboxMapper;
 use OCA\Mail\Db\Message;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class OftenContactedSenderClassifier extends AClassifier {
@@ -68,7 +69,7 @@ class OftenContactedSenderClassifier extends AClassifier {
 			->from('mail_recipients', 'r')
 			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
 			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
-			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId())));
+			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)));
 		$result = $select->execute();
 		$cnt = $result->fetchColumn();
 		$result->closeCursor();
@@ -83,7 +84,7 @@ class OftenContactedSenderClassifier extends AClassifier {
 			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
 			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
 			->where($qb->expr()->eq('r.email', $qb->createNamedParameter($email)))
-			->andWhere($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId())));
+			->andWhere($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)));
 		$result = $select->execute();
 		$cnt = $result->fetchColumn();
 		$result->closeCursor();
