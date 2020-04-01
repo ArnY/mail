@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Mail\Service\Classification;
 
 use OCA\Mail\Account;
+use OCA\Mail\Address;
 use OCA\Mail\Db\Mailbox;
 use OCA\Mail\Db\MailboxMapper;
 use OCA\Mail\Db\Message;
@@ -34,6 +35,8 @@ use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 class OftenReadSenderClassifier extends AClassifier {
+
+	use SafeRatio;
 
 	/** @var MailboxMapper */
 	private $mailboxMapper;
@@ -59,7 +62,11 @@ class OftenReadSenderClassifier extends AClassifier {
 			return false;
 		}
 
-		return ($this->getNrOfReadMessages($mb, $sender->getEmail()) / $this->getNumberOfMessages($mb, $sender->getEmail())) > 0.9;
+		return $this->greater(
+			$this->getNrOfReadMessages($mb, $sender->getEmail()),
+			$this->getNumberOfMessages($mb, $sender->getEmail()),
+			0.9
+		);
 	}
 
 	private function getNrOfReadMessages(Mailbox $mb, string $email): int {
@@ -69,7 +76,8 @@ class OftenReadSenderClassifier extends AClassifier {
 			->from('mail_recipients', 'r')
 			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
 			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
-			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
+			->where($qb->expr()->eq('r.type', $qb->createNamedParameter(Address::TYPE_FROM), IQueryBuilder::PARAM_INT))
+			->andWhere($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->eq('m.flag_seen', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->eq('r.email', $qb->createNamedParameter($email)));
 		$result = $select->execute();
@@ -85,7 +93,8 @@ class OftenReadSenderClassifier extends AClassifier {
 			->from('mail_recipients', 'r')
 			->join('r', 'mail_messages', 'm', $qb->expr()->eq('m.id', 'r.message_id'))
 			->join('r', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
-			->where($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
+			->where($qb->expr()->eq('r.type', $qb->createNamedParameter(Address::TYPE_FROM), IQueryBuilder::PARAM_INT))
+			->andWhere($qb->expr()->eq('mb.id', $qb->createNamedParameter($mb->getId(), IQueryBuilder::PARAM_INT)))
 			->andWhere($qb->expr()->eq('r.email', $qb->createNamedParameter($email)));
 		$result = $select->execute();
 		$cnt = $result->fetchColumn();
