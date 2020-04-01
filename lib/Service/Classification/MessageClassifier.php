@@ -32,7 +32,7 @@ use OCA\Mail\Db\Message;
 class MessageClassifier {
 
 	/** @var AClassifier */
-	private $flagClassifier;
+	private $oftenImportantSenderClassifier;
 
 	/** @var AClassifier */
 	private $oftenContactedSenderClassifier;
@@ -43,11 +43,11 @@ class MessageClassifier {
 	/** @var AClassifier */
 	private $oftenRepliedSenderClassifier;
 
-	public function __construct(FlagClassifier $flagClassifier,
+	public function __construct(OftenImportantSenderClassifier $oftenImportantSenderClassifier,
 								OftenContactedSenderClassifier $oftenContactedSenderClassifier,
 								OftenReadSenderClassifier $oftenReadSenderClassifier,
 								OftenRepliedSenderClassifier $oftenRepliedSenderClassifier) {
-		$this->flagClassifier = $flagClassifier;
+		$this->oftenImportantSenderClassifier = $oftenImportantSenderClassifier;
 		$this->oftenContactedSenderClassifier = $oftenContactedSenderClassifier;
 		$this->oftenReadSenderClassifier = $oftenReadSenderClassifier;
 		$this->oftenRepliedSenderClassifier = $oftenRepliedSenderClassifier;
@@ -56,7 +56,7 @@ class MessageClassifier {
 	public function isImportant(Account $account,
 								Mailbox $mailbox,
 								Message $message): bool {
-		return $this->flagClassifier
+		return $this->oftenImportantSenderClassifier
 			->or($this->oftenContactedSenderClassifier)
 			->or($this->oftenReadSenderClassifier)
 			->or($this->oftenRepliedSenderClassifier)
