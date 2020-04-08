@@ -53,7 +53,8 @@
 							{{ t('mail', 'Delete') }}
 						</ActionButton>
 					</Actions>
-					<Modal v-if="showSource" @close="onCloseSource">
+					<Modal v-if="showSource" @close="onCloseSource"
+						   :size="isMobile ? 'full' : 'large'">
 						<div class="section">
 							<h2>{{ t('mail', 'Message source') }}</h2>
 							<pre class="message-source">{{ rawMessage }}</pre>
@@ -98,9 +99,11 @@ import MessagePlainTextBody from './MessagePlainTextBody'
 import Loading from './Loading'
 import logger from '../logger'
 import MessageAttachments from './MessageAttachments'
+import isMobile from '@nextcloud/vue/dist/Mixins/isMobile'
 
 export default {
 	name: 'Message',
+	mixins: [isMobile],
 	components: {
 		ActionButton,
 		Actions,
