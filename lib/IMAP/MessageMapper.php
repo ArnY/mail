@@ -135,6 +135,7 @@ class MessageMapper {
 			$max,
 			$lower + $estimatedPageSize
 		);
+		$this->logger->debug("min=$min max=$max total=$total totalRange=$totalRange estimatedPageSize=$estimatedPageSize lower=$lower upper=$upper highestknown=$highestKnownUid");
 
 		$query = new Horde_Imap_Client_Fetch_Query();
 		$query->uid();
@@ -161,6 +162,7 @@ class MessageMapper {
 			0,
 			$maxResults
 		);
+		$this->logger->debug("findAll of " . $mailbox->getAccountId() . ":" . $mailbox->getName() . ", upper=$upper, all=$max");
 		return [
 			'messages' => $this->findByIds(
 				$client,
