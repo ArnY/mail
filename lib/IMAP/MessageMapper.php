@@ -74,7 +74,7 @@ class MessageMapper {
 	 * @param Mailbox $mailbox
 	 *
 	 * @param int $maxResults
-	 * @param int|null $highestKnownUid
+	 * @param int $highestKnownUid
 	 *
 	 * @return array
 	 * @throws Horde_Imap_Client_Exception
@@ -82,7 +82,7 @@ class MessageMapper {
 	public function findAll(Horde_Imap_Client_Socket $client,
 							Mailbox $mailbox,
 							int $maxResults,
-							?int $highestKnownUid = 0): array {
+							int $highestKnownUid): array {
 		/**
 		 * To prevent memory exhaustion, we don't want to just ask for a list of
 		 * all UIDs and limit them client-side. Instead we can (hopefully
@@ -125,10 +125,15 @@ class MessageMapper {
 		// +1 is added to fetch all messages with the rare case of strictly
 		// continuous UIDs and fractions
 		$estimatedPageSize = (int)(($totalRange / $total) * $maxResults) + 1;
+		// Determine min UID to fetch, but don't exceed the known maximum
+		$lower = max(
+			$min,
+			($highestKnownUid ?? 0) + 1
+		);
 		// Determine max UID to fetch, but don't exceed the known maximum
 		$upper = min(
 			$max,
-			$highestKnownUid + $estimatedPageSize
+			$lower + $estimatedPageSize
 		);
 
 		$query = new Horde_Imap_Client_Fetch_Query();
@@ -143,7 +148,7 @@ class MessageMapper {
 						$mailbox->getName(),
 						$query,
 						[
-							'ids' => new Horde_Imap_Client_Ids(($highestKnownUid + 1) . ':' . $upper)
+							'ids' => new Horde_Imap_Client_Ids($lower . ':' . $upper)
 						]
 					))
 				),
