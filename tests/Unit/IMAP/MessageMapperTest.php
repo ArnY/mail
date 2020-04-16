@@ -219,5 +219,4 @@ class MessageMapperTest extends TestCase {
 			300
 		);
 	}
-
 }
