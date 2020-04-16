@@ -71,7 +71,7 @@ class MessageMapper {
 
 	/**
 	 * @param Horde_Imap_Client_Socket $client
-	 * @param Mailbox $mailbox
+	 * @param string $mailbox
 	 *
 	 * @param int $maxResults
 	 * @param int $highestKnownUid
@@ -80,7 +80,7 @@ class MessageMapper {
 	 * @throws Horde_Imap_Client_Exception
 	 */
 	public function findAll(Horde_Imap_Client_Socket $client,
-							Mailbox $mailbox,
+							string $mailbox,
 							int $maxResults,
 							int $highestKnownUid): array {
 		/**
@@ -94,7 +94,7 @@ class MessageMapper {
 		 */
 
 		$metaResults = $client->search(
-			$mailbox->getName(),
+			$mailbox,
 			null,
 			[
 				'results' => [
@@ -146,7 +146,7 @@ class MessageMapper {
 						return $data->getUid();
 					},
 					iterator_to_array($client->fetch(
-						$mailbox->getName(),
+						$mailbox,
 						$query,
 						[
 							'ids' => new Horde_Imap_Client_Ids($lower . ':' . $upper)
@@ -162,11 +162,11 @@ class MessageMapper {
 			0,
 			$maxResults
 		);
-		$this->logger->debug("findAll of " . $mailbox->getAccountId() . ":" . $mailbox->getName() . ", upper=$upper, all=$max");
+		$this->logger->debug("findAll of " . $mailbox . ", upper=$upper, all=$max");
 		return [
 			'messages' => $this->findByIds(
 				$client,
-				$mailbox->getName(),
+				$mailbox,
 				$uidsToFetch
 			),
 			'all' => $upper === $max,

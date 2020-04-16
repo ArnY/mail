@@ -177,7 +177,7 @@ class ImapToDbSynchronizer {
 		try {
 			$imapMessages = $this->imapMapper->findAll(
 				$client,
-				$mailbox,
+				$mailbox->getName(),
 				self::MAX_NEW_MESSAGES,
 				$highestKnownUid ?? 0
 			);
